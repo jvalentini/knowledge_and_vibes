@@ -34,19 +34,18 @@ Verify:
 bd --version && bv --version && cass --version && cm --version && ubs --version && echo "✓ All installed"
 ```
 
-## Step 2: API Keys (Optional)
+## Step 2: MCP Servers
 
-**Ask the user:**
-- "Do you have a Morph API key for Warp-Grep (faster code search)?"
-- "Do you have an Exa API key for web search?"
+**Get API keys:**
+- Morph (Warp-Grep): https://morphllm.com
+- Exa (web/code search): https://dashboard.exa.ai
 
-If yes to Morph:
+**Install:**
 ```bash
+# Warp-Grep - parallel codebase search
 claude mcp add morph-fast-tools -s user -e MORPH_API_KEY=<key> -e ALL_TOOLS=true -- npx -y @morphllm/morphmcp
-```
 
-If yes to Exa:
-```bash
+# Exa - real-time web and code search
 claude mcp add exa -s user -e EXA_API_KEY=<key> -- npx -y @anthropic-labs/exa-mcp-server
 ```
 
