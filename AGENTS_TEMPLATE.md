@@ -47,6 +47,42 @@ Rules:
 
 ---
 
+## Configuration Reference
+
+<!-- CUSTOMIZE: Update paths based on what you've configured -->
+
+Your configuration is split across these locations:
+
+| Location | Purpose | When to Use |
+|----------|---------|-------------|
+| `CLAUDE.md` | Project context, architecture | Understanding the codebase |
+| `AGENTS.md` | This file - workflow instructions | Session startup, tool usage |
+| `.claude/rules/` | Constraints and conventions | Auto-loaded, always follow |
+| `.claude/skills/` | Detailed guides and capabilities | Reference when relevant |
+| `.claude/commands/` | Slash commands | Invoke with `/command-name` |
+
+### Rules (Auto-Loaded)
+
+Rules in `.claude/rules/*.md` are automatically enforced. Check what's there:
+- `safety.md` — File deletion, destructive commands
+- [Add your rules here]
+
+### Skills (On-Demand)
+
+Skills in `.claude/skills/*/SKILL.md` provide detailed guidance. Use them when:
+- The skill's description matches your current task
+- You need detailed patterns or examples
+
+Available skills:
+- [List your skills here, e.g., `style-guide` — Code conventions]
+
+### Commands (User-Triggered)
+
+Slash commands in `.claude/commands/*.md`:
+- [List your commands here, e.g., `/audit-style <path>` — Check code style]
+
+---
+
 ## Issue Tracking with bd (Beads)
 
 All issue tracking goes through **bd**. No other TODO systems.
@@ -394,6 +430,31 @@ crawling              # Extract content from specific URLs
 ---
 
 ## Session Workflow
+
+### Session Naming (Claude Code 2.0.64+)
+
+Name sessions immediately after Agent Mail registration for traceability:
+
+```
+{project}-{AgentMailName}-{YYYYMMDD-HHMMSS}
+```
+
+Examples:
+- `myapp-GreenCastle-20251210-143022`
+- `backend-BlueLake-20251210-091500`
+
+After `register_agent` or `macro_start_session` returns your agent name:
+
+```bash
+/rename myapp-GreenCastle-20251210-143022
+```
+
+To resume later:
+
+```bash
+claude --resume myapp-GreenCastle-20251210-143022
+# Or use /resume in REPL
+```
 
 ### Start
 

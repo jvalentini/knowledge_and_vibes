@@ -59,11 +59,17 @@ bd ready --json                              # See available tasks
 bd update bd-123 --status in_progress        # Claim one
 cm context "implement feature X" --json      # Get relevant context
 
+# Name your session (Claude Code 2.0.64+)
+# Format: {project}-{AgentMailName}-{YYYYMMDD-HHMMSS}
+/rename myapp-GreenCastle-20251210-143022
+
 # End
 ubs --staged                                 # Scan for bugs
 bd close bd-123 --reason "Implemented X"     # Complete task
 git add -A && git commit && git push         # Save everything
 ```
+
+Resume sessions later with `claude --resume myapp-GreenCastle-20251210-143022`
 
 ### When Stuck
 
@@ -317,8 +323,10 @@ curl localhost:8765/health  # Agent Mail
 ### Setup & Templates
 | Document | Description |
 |----------|-------------|
-| [SETUP_GUIDE.md](./SETUP_GUIDE.md) | Agent-driven setup instructions |
-| [AGENTS_TEMPLATE.md](./AGENTS_TEMPLATE.md) | Template for your projects |
+| [SETUP_GUIDE.md](./SETUP_GUIDE.md) | Fresh project setup (new projects) |
+| [MIGRATION_GUIDE.md](./MIGRATION_GUIDE.md) | Onboarding existing projects to K&V stack |
+| [AGENTS_TEMPLATE.md](./AGENTS_TEMPLATE.md) | Template for AGENTS.md workflow |
+| [CLAUDE_CONFIG_GUIDE.md](./CLAUDE_CONFIG_GUIDE.md) | Organizing rules, skills, and commands |
 
 ### Examples
 | Document | Description |
@@ -394,8 +402,10 @@ sudo mv ./dist/cass-memory /usr/local/bin/cm
 ```
 knowledge_and_vibes/
 ├── README.md                # This file
-├── SETUP_GUIDE.md           # Agent-driven setup
+├── SETUP_GUIDE.md           # Fresh project setup
+├── MIGRATION_GUIDE.md       # Onboarding existing projects
 ├── AGENTS_TEMPLATE.md       # Template for your projects
+├── CLAUDE_CONFIG_GUIDE.md   # Organizing .claude/ directory
 ├── PHILOSOPHY.md            # 4-phase development framework
 ├── DECOMPOSITION.md         # Task breakdown + planning patterns
 ├── CODEMAPS_TEMPLATE.md     # Architecture documentation

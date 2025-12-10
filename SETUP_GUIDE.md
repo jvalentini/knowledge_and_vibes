@@ -58,7 +58,29 @@ cass index --full
 git add .beads/ AGENTS.md && git commit -m "Initialize Knowledge & Vibes"
 ```
 
-## Step 4: Done
+## Step 4: Configure Agent Instructions (Optional)
+
+Set up rules, skills, and commands for better agent behavior:
+
+```bash
+# Create directory structure
+mkdir -p .claude/rules .claude/skills .claude/commands
+
+# Add safety rules (recommended)
+cat > .claude/rules/safety.md << 'EOF'
+# Safety Rules
+
+Never delete files without explicit user permission.
+Never run destructive git commands without approval.
+EOF
+
+git add .claude/ && git commit -m "Add Claude Code configuration"
+```
+
+For detailed guidance on rules, skills, and commands, see:
+https://raw.githubusercontent.com/Mburdo/knowledge_and_vibes/master/CLAUDE_CONFIG_GUIDE.md
+
+## Step 5: Done
 
 Tell the user:
 
