@@ -56,6 +56,19 @@ These tools work together as a complete system. Let's learn how.
 
 **For agents**: Always start sessions with `bd ready --json` to get unblocked work. Always end with `bd sync && git push` to persist state.
 
+**Advanced features**:
+```bash
+# Dependencies
+bd dep add bd-child bd-blocker --type blocks      # Task blocked by another
+bd dep add bd-new bd-current --type discovered-from  # Found during work
+bd dep tree bd-42                                 # Visualize dependency tree
+bd blocked                                        # What's waiting on dependencies?
+
+# Maintenance
+bd doctor --fix                                   # Health check and auto-repair
+bd show bd-42                                     # Full task details
+```
+
 ### Beads Viewer (`bv`) - Graph Intelligence
 
 **What it is**: Analyzes your task graph to find the highest-impact work.
@@ -71,6 +84,16 @@ These tools work together as a complete system. Let's learn how.
 CRITICAL: Never run `bv` without --robot-* flags!
 The interactive TUI will hang your session permanently.
 Always use: bv --robot-priority, bv --robot-insights, etc.
+```
+
+**All robot commands**:
+```bash
+bv --robot-priority                # Ranked recommendations with confidence scores
+bv --robot-plan                    # Parallel execution tracks
+bv --robot-insights                # Graph metrics (PageRank, betweenness, HITS)
+bv --robot-recipes                 # Available filter presets
+bv --robot-diff --diff-since "1 hour ago"  # What changed recently
+bv --robot-diff --diff-since HEAD~5        # Changes in last 5 commits
 ```
 
 ### Agent Mail - Multi-Agent Coordination
@@ -96,6 +119,34 @@ file_reservation_paths(project_key, agent_name, paths=["src/auth/**"], exclusive
 release_file_reservations(project_key, agent_name)
 ```
 
+**Advanced features**:
+```python
+# Extend reservation if work takes longer
+renew_file_reservations(project_key, agent_name, extend_seconds=1800)
+
+# Search all messages
+search_messages(project_key, query="authentication", limit=20)
+
+# Summarize a thread
+summarize_thread(project_key, thread_id="bd-123")
+
+# Build coordination (prevent concurrent builds)
+acquire_build_slot(project_key, agent_name, slot="main", exclusive=True)
+release_build_slot(project_key, agent_name, slot="main")
+
+# Quick start macro (register + reserve + check inbox in one call)
+macro_start_session(
+    human_key="/abs/path",
+    program="claude-code",
+    model="opus-4.5",
+    file_reservation_paths=["src/**"],
+    inbox_limit=10
+)
+
+# Who is this agent?
+whois(project_key, agent_name="BlueLake")
+```
+
 ### CASS - Session Search
 
 **What it is**: Searches across ALL your past AI coding sessions - Claude Code, Codex, Cursor, Aider, Gemini, and more.
@@ -113,6 +164,26 @@ cass search "authentication error" --robot --fields minimal --limit 5
 
 # Token-efficient output
 cass search "query" --robot --max-tokens 2000
+
+# Wildcard search
+cass search "auth*" --robot --limit 5
+```
+
+**Additional commands**:
+```bash
+# View session activity
+cass timeline --today --json                       # Today's sessions
+cass timeline --since 7d --json                    # Last week
+
+# Export session to markdown
+cass export /path/session.jsonl --format markdown -o output.md
+
+# Expand context around a match
+cass expand /path/session.jsonl -n 42 -C 3 --json  # Line 42 with 3 lines context
+
+# Output formats
+cass search "query" --robot-format jsonl           # Streaming output
+cass search "query" --robot-format compact         # Minimal single-line JSON
 ```
 
 ### cass-memory (`cm`) - Cross-Agent Learning
@@ -174,15 +245,55 @@ ubs --staged
 ubs --staged --fail-on-warning   # Exit 0 = safe
 ```
 
-### Warp-Grep - Fast Parallel Search
+**Additional options**:
+```bash
+# Scan working tree changes (not staged)
+ubs --diff
 
-**What it is**: MCP server that runs 8 parallel searches across your codebase.
+# Profiles for different contexts
+ubs --profile=strict .             # Fail on all warnings
+ubs --profile=loose .              # Skip nits (for prototyping)
+
+# Language filters
+ubs --only=typescript .            # TypeScript only
+ubs --only=python,go .             # Multiple languages
+
+# Output formats
+ubs . --format=json                # JSON output
+ubs . --format=sarif               # GitHub Code Scanning format
+
+# CI mode with regression detection
+ubs --ci
+ubs --comparison baseline.json .   # Compare against baseline
+
+# Verbose mode (shows code examples)
+ubs -v .
+```
+
+**Supported languages**: javascript, typescript, python, c, c++, rust, go, java, ruby
+
+### Warp-Grep & FastApply - Fast Parallel Search
+
+**What it is**: MCP server that runs 8 parallel searches across your codebase and provides fast code editing.
 
 **Why you need it**: Normal grep is serial and slow. Warp-Grep is 8× faster and doesn't pollute your context window with search commands.
 
-**For humans**: It just makes Claude faster at finding code.
+**Tools provided**:
+- **Warp-Grep**: 8 concurrent searches per turn
+- **FastApply**: Code edit merging in <1 second
+
+**For humans**: It just makes Claude faster at finding and editing code.
 
 **For agents**: It works automatically - Claude uses it instead of running grep commands.
+
+**When to use Warp-Grep**:
+- "How does X work?" discovery
+- Data flow across multiple files
+- Cross-cutting concerns
+
+**When NOT to use**:
+- You know the function name (use `rg`)
+- You know the exact file (just open it)
 
 ### Exa MCP - AI-Powered Web & Code Search
 
@@ -204,6 +315,17 @@ Tools available:
 ```
 
 **Setup**: Requires an API key from [dashboard.exa.ai](https://dashboard.exa.ai/api-keys)
+
+**When to use Exa**:
+- Current documentation (APIs change after training cutoff)
+- Code examples from GitHub/StackOverflow
+- Latest library versions or deprecation notices
+- Research on best practices
+
+**When NOT to use Exa**:
+- Information likely in your codebase (use CASS or Warp-Grep)
+- Historical context from past sessions (use cass-memory)
+- Task information (use Beads)
 
 ---
 
@@ -611,6 +733,9 @@ release_file_reservations(project_key, agent_name)
 | `cm context` returns empty | Check CASS is indexed, run `cm doctor` |
 | UBS module errors | Run `ubs doctor --fix` |
 | File reservation conflict | Wait for TTL expiry or coordinate with holder |
+| Warp-Grep not working | Check `/mcp` shows morph-fast-tools, verify API key |
+| Exa not working | Check `/mcp` shows exa, verify API key from dashboard.exa.ai |
+| MCP server not listed | Run `claude mcp add ...` command from installation docs |
 
 ---
 
