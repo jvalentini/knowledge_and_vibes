@@ -2,67 +2,53 @@
 
 **For AI agents setting up Knowledge & Vibes in a new project.**
 
-This guide is designed to be followed by an AI agent. Each section has clear steps, verification commands, and decision points where you should consult the user.
+---
+
+## Phase 1: Check What's Installed
+
+First, check which tools are already available:
+
+```bash
+bd --version 2>/dev/null && echo "✓ bd (Beads)" || echo "✗ bd"
+bv --robot-help 2>/dev/null | head -1 && echo "✓ bv" || echo "✗ bv"
+cass --version 2>/dev/null && echo "✓ cass" || echo "✗ cass"
+cm --help 2>/dev/null | head -1 && echo "✓ cm" || echo "✗ cm"
+ubs --version 2>/dev/null && echo "✓ ubs" || echo "✗ ubs"
+```
+
+**If all tools are installed, skip to Phase 2.**
 
 ---
 
-## Prerequisites Check
+## Phase 1b: Install Missing Tools
 
-Before starting, verify these are available:
-
-```bash
-# Check for required tools
-which git && echo "✓ git"
-which node && echo "✓ node"
-which npm && echo "✓ npm"
-```
-
-**If any are missing**: Stop and tell the user what needs to be installed.
-
----
-
-## Phase 1: Install the Toolkit
-
-### Step 1.1: Clone the repository
+For any missing tools, run these non-interactive installers:
 
 ```bash
-git clone https://github.com/Mburdo/knowledge_and_vibes.git ~/.knowledge_and_vibes
+# Beads (bd) - install via cargo or download binary
+curl -fsSL https://raw.githubusercontent.com/steveyegge/beads/main/install.sh | bash
+
+# CASS (session search)
+curl -fsSL https://raw.githubusercontent.com/Dicklesworthstone/coding_agent_session_search/main/install.sh | bash -s -- --easy-mode
+
+# UBS (bug scanner)
+curl -fsSL https://raw.githubusercontent.com/Dicklesworthstone/ultimate_bug_scanner/master/install.sh | bash -s -- --easy-mode
+
+# cass-memory (cm) - installed with CASS or separately via npm
+npm install -g cass-memory
 ```
 
-### Step 1.2: Run the installer
+Ensure PATH includes `~/.local/bin`:
 
 ```bash
-cd ~/.knowledge_and_vibes
-./install-kv.sh
+export PATH="$HOME/.local/bin:$PATH"
 ```
 
-Or use the interactive installer:
+Verify installation:
 
 ```bash
-~/.knowledge_and_vibes/kv install
+bd --version && bv --robot-help | head -1 && cass --version && ubs --version
 ```
-
-### Step 1.3: Verify PATH
-
-```bash
-# Add to shell config if not already present
-echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc  # or ~/.bashrc
-source ~/.zshrc
-```
-
-### Step 1.4: Verify each tool
-
-Run these and confirm each returns output (not "command not found"):
-
-```bash
-bd --version        # Beads
-bv --robot-help     # Beads Viewer
-cass capabilities --json  # CASS
-cm doctor           # cass-memory
-ubs doctor          # UBS
-```
-
-**Decision point**: If any tool fails, consult the Troubleshooting section in README.md.
 
 ---
 
