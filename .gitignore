@@ -1,0 +1,26 @@
+# Cloned tool repositories (installed via `kv install`)
+beads/beads/
+beads_viewer/beads_viewer/
+coding_agent_session_search/coding_agent_session_search/
+mcp_agent_mail/mcp_agent_mail/
+ultimate_bug_scanner/ultimate_bug_scanner/
+warp_grep/warp_grep/
+cass_memory_system/
+
+# These are cloned during install - don't track them
+# The kv installer handles downloading these from their upstream repos
+
+# macOS
+.DS_Store
+
+# Editor
+*.swp
+*.swo
+*~
+
+# Temp
+*.bak
+*.tmp
+
+# Legacy/internal docs (if any)
+_NLU/
