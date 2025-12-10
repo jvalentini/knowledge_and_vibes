@@ -329,16 +329,37 @@ curl localhost:8765/health  # Agent Mail
 
 ## Troubleshooting
 
+### Common Issues
+
 | Issue | Fix |
 |-------|-----|
-| `bd: command not found` | Add `~/.local/bin` to PATH |
-| CASS finds nothing | Run `cass index --full` |
-| `cm context` returns empty | Check CASS is indexed, run `cm doctor`. If still empty, apply patches (see below) |
-| `cm reflect` broken | Known CASS bug, use `cm context` instead |
-| Agent Mail won't start | Check port 8765 is free |
+| `bd: command not found` | Add `~/.local/bin` to PATH: `export PATH="$HOME/.local/bin:$PATH"` |
+| `bv: command not found` | Same PATH fix, or reinstall via agent-mail installer |
+| `bv` or `cass` hangs | **Always** use `--robot` or `--json` flags. TUI mode hangs agents |
+| CASS finds nothing | Run `cass index --full` to index sessions |
+| `cm context` returns empty | Check CASS indexed, run `cm doctor`. If still empty, apply patches (see below) |
+| `cm reflect` broken | Known CASS SQL bug, use `cm context` instead |
+| Agent Mail won't start | Check port 8765 is free: `lsof -i :8765` |
+| Agent Mail MCP not connecting | Run `am` to start server, check `curl localhost:8765/health` |
 | UBS module errors | Run `ubs doctor --fix` |
-| Warp-Grep not working | Check `/mcp` shows morph-fast-tools |
-| Exa not working | Check `/mcp` shows exa, verify API key |
+| Warp-Grep not working | Check `/mcp` shows morph-fast-tools, verify MORPH_API_KEY |
+| Exa not working | Check `/mcp` shows exa, verify EXA_API_KEY |
+| `bun: command not found` | Install bun: `curl -fsSL https://bun.sh/install \| bash` (needed for cm from source) |
+| Permission denied on install | Use `~/.local/bin` instead of `/usr/local/bin`, or use `sudo` |
+
+### Agent-Specific Rules
+
+**Critical**: These tools have TUI modes that will hang AI agents:
+- `bv` → Always use `bv --robot-*` flags
+- `cass` → Always use `cass --robot` or `--json` flags
+- `kv` → Removed (was TUI-only, use SETUP_GUIDE.md instead)
+
+### Health Checks
+
+```bash
+# Quick health check for all tools
+bd doctor && cm doctor && ubs doctor && cass health && curl -s localhost:8765/health
+```
 
 ### CASS + cass-memory Compatibility
 
