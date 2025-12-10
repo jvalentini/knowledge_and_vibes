@@ -199,74 +199,7 @@ Should show indexed sessions.
 
 ---
 
-## Phase 5: Create Initial Task Backlog
-
-### Step 5.1: Ask user about their goals
-
-**Ask the user**: "What are you trying to accomplish with this project? Please describe:
-1. The main goal or feature you're building
-2. Any known subtasks or components
-3. Current blockers or unknowns"
-
-### Step 5.2: Use reasoning to create a plan
-
-Before creating beads, think through the decomposition:
-
-1. **Break into phases**: What must be done first? What depends on what?
-2. **Identify atomic units**: Each bead should be ~500 lines of code or less
-3. **Mark dependencies**: Which tasks block others?
-4. **Assign types**: bug, feature, task, epic, chore
-5. **Set priorities**: 0 (critical) to 4 (backlog)
-
-### Step 5.3: Create beads from the plan
-
-For each identified task:
-
-```bash
-bd create "Task title" -t <type> -p <priority> --estimate <minutes>
-```
-
-For dependencies:
-
-```bash
-bd dep add <child-id> <blocker-id> --type blocks
-```
-
-For epics with subtasks:
-
-```bash
-bd create "Epic: Main Feature" -t epic -p 1
-bd create "Subtask 1" -t task -p 1
-bd create "Subtask 2" -t task -p 1
-bd dep add <subtask1> <epic> --type parent-child
-bd dep add <subtask2> <epic> --type parent-child
-```
-
-### Step 5.4: Verify the task graph
-
-```bash
-bv --robot-insights
-```
-
-Check for:
-- No cycles (`bd dep cycles` should return empty)
-- Clear critical path
-- Reasonable dependency structure
-
-### Step 5.5: Commit the backlog
-
-```bash
-git add .beads/
-git commit -m "Add initial task backlog
-
-Created <N> beads across <M> phases"
-```
-
----
-
-## Phase 6: Handoff to User
-
-### Step 6.1: Summary message
+## Phase 5: Setup Complete
 
 Tell the user:
 
@@ -285,43 +218,68 @@ Setup complete! Here's what was configured:
 **Project Initialized:**
 - .beads/ - Task tracking directory
 - AGENTS.md - Agent instructions
-
-**Initial Backlog:**
-- <N> tasks created
-- <M> ready to start (no blockers)
-
-**Next Steps:**
-1. Review the backlog: `bd list`
-2. See what's ready: `bd ready --json`
-3. Start your first task: `bd update <id> --status in_progress`
-4. Read TUTORIAL.md for detailed workflow guidance
-
-**Key Files:**
-- AGENTS.md - Instructions for AI agents working on this project
-- .beads/ - Task state (always commit with code changes)
-
-**Daily Workflow:**
-1. `bd ready --json` - Find work
-2. `cm context "task" --json` - Get context
-3. Do the work
-4. `ubs --staged` - Scan for bugs
-5. `bd close <id>` - Complete task
-6. `git add -A && git commit && git push`
-```
-
-### Step 6.2: Point to documentation
-
-```
-**Where to Learn More:**
-- TUTORIAL.md - Complete workflow guide
-- AGENTS_TEMPLATE.md - Full tool reference
-- README.md - Quick reference
-- cass_memory_system/AGENTS.md - Excellent AGENTS.md example
+- Past sessions indexed in CASS
 ```
 
 ---
 
-## Troubleshooting During Setup
+## Next Step: Create Your Plan
+
+Now that setup is complete, you need an implementation plan before starting work.
+
+**Tell your agent:**
+
+```
+Read PHILOSOPHY.md and DECOMPOSITION.md, then create an extremely detailed
+implementation plan for: [describe what you want to build]
+
+The plan should follow the 4-phase framework and break work into atomic
+beads (~500 lines each). Present the plan for my approval before creating
+any beads.
+```
+
+**What the agent will do:**
+1. Read your planning guides (PHILOSOPHY.md, DECOMPOSITION.md)
+2. Gather context from your codebase
+3. Create a detailed phased plan with dependencies
+4. Present it for your review
+5. After approval, convert the plan to beads with `bd create` and `bd dep add`
+6. Commit the backlog
+
+**After the plan is created:**
+```bash
+bd ready --json           # See what's ready to start
+bd update <id> --status in_progress  # Claim your first task
+```
+
+---
+
+## Key Files
+
+| File | Purpose |
+|------|---------|
+| AGENTS.md | Instructions for AI agents on your project |
+| .beads/ | Task state (always commit with code changes) |
+| PHILOSOPHY.md | The 4-phase development framework |
+| DECOMPOSITION.md | How to break work into atomic beads |
+| TUTORIAL.md | Complete workflow walkthrough |
+
+---
+
+## Daily Workflow (After Planning)
+
+```bash
+bd ready --json              # 1. Find work
+cm context "task" --json     # 2. Get context
+# Do the work                # 3. Implement
+ubs --staged                 # 4. Scan for bugs
+bd close <id> --reason "..." # 5. Complete task
+git add -A && git commit     # 6. Save everything
+```
+
+---
+
+## Troubleshooting
 
 | Issue | Solution |
 |-------|----------|
@@ -330,78 +288,3 @@ Setup complete! Here's what was configured:
 | `cass index` finds nothing | Check Claude Code sessions exist in `~/.claude/` |
 | MCP server not listed | Restart Claude Code after adding |
 | Permission denied | Check file permissions, may need `chmod +x` |
-
----
-
-## Decomposition Guidelines
-
-When creating beads from a plan:
-
-### Size Target
-- **~500 lines of code** per bead
-- If larger, decompose into sub-beads: `bd-abc.1`, `bd-abc.2`
-- If much smaller, consider combining with related work
-
-### Atomic Principle
-Each bead should be:
-- **Independently testable** - Can verify completion without other beads
-- **Single responsibility** - Does one thing well
-- **Clear boundaries** - Obvious where it starts and ends
-
-### Dependency Types
-- `blocks` - Must complete A before starting B
-- `related` - Work is connected but not blocking
-- `parent-child` - B is a subtask of A
-- `discovered-from` - Found B while working on A
-
-### Priority Guidelines
-- **P0** - Blocking everything, do immediately
-- **P1** - Core functionality, this sprint
-- **P2** - Important but not urgent
-- **P3** - Nice to have
-- **P4** - Backlog, someday
-
-### Estimation
-- Use minutes for estimates
-- 30-120 minutes is typical for a well-scoped bead
-- If estimate > 240 minutes, consider decomposing
-
----
-
-## Example: Decomposing "Add User Authentication"
-
-**Bad** (too large):
-```bash
-bd create "Add user authentication" -t feature -p 1 --estimate 1440
-```
-
-**Good** (atomic):
-```bash
-# Create epic
-bd create "Epic: User Authentication" -t epic -p 1
-
-# Phase 1: Foundation
-bd create "Set up auth database schema" -t task -p 0 --estimate 60
-bd create "Create User model and migrations" -t task -p 0 --estimate 45
-bd create "Add password hashing utilities" -t task -p 0 --estimate 30
-
-# Phase 2: Core auth
-bd create "Implement registration endpoint" -t feature -p 1 --estimate 90
-bd create "Implement login endpoint" -t feature -p 1 --estimate 90
-bd create "Add JWT token generation" -t task -p 1 --estimate 60
-bd create "Create auth middleware" -t task -p 1 --estimate 45
-
-# Phase 3: Session management
-bd create "Add refresh token support" -t feature -p 2 --estimate 90
-bd create "Implement logout endpoint" -t task -p 2 --estimate 30
-bd create "Add session invalidation" -t task -p 2 --estimate 45
-
-# Set up dependencies
-bd dep add <registration> <user-model> --type blocks
-bd dep add <login> <password-hashing> --type blocks
-bd dep add <jwt> <login> --type blocks
-bd dep add <middleware> <jwt> --type blocks
-# ... etc
-```
-
-Each bead is testable, atomic, and ~30-90 minutes of focused work.
