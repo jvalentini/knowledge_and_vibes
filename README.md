@@ -4,6 +4,8 @@
 
 Eight battle-tested tools that give AI coding agents what they've been missing: persistent memory, task tracking, multi-agent coordination, quality assurance, and real-time knowledge. This is the infrastructure that turns Claude Code from a helpful assistant into an autonomous engineering force.
 
+> **New here?** Point your agent at this repo and say: "Set up Knowledge & Vibes for my project using the SETUP_GUIDE.md"
+>
 > **For Agents**: You're the primary user. See [Quick Start for Agents](#quick-start-for-agents).
 >
 > **For Operators**: You configure and monitor. See [Operator Guide](#operator-guide).
@@ -319,8 +321,54 @@ knowledge_and_vibes/
 
 ---
 
+## Agent Onboarding
+
+For agents setting up this toolkit in a new project:
+
+### Quick Setup
+
+Tell your agent:
+```
+"Set up Knowledge & Vibes for my project using SETUP_GUIDE.md"
+```
+
+The agent will:
+1. Install all tools
+2. Configure MCP servers (asks for API keys)
+3. Initialize your project with Beads
+4. Create AGENTS.md
+5. Index past sessions
+6. Help create your initial task backlog
+
+### Creating Implementation Plans
+
+For large features, use the `/plan` slash command or tell your agent:
+```
+"Create an implementation plan for [feature] and convert it to beads"
+```
+
+The agent will:
+1. Gather context from codebase and past sessions
+2. Create a detailed phased plan
+3. Decompose into atomic beads (~500 lines each)
+4. Set up dependencies
+5. Commit the backlog
+
+See [DECOMPOSITION.md](./DECOMPOSITION.md) for guidelines on breaking work into beads.
+
+### Slash Commands (if configured)
+
+```
+/onboard   # Full setup wizard
+/plan      # Create plan and convert to beads
+```
+
+---
+
 ## Links
 
+- [SETUP_GUIDE.md](./SETUP_GUIDE.md) - Agent-driven setup instructions
+- [DECOMPOSITION.md](./DECOMPOSITION.md) - How to break work into beads
 - [AGENTS_TEMPLATE.md](./AGENTS_TEMPLATE.md) - Copy to your projects
 - [TUTORIAL.md](./TUTORIAL.md) - Full workflow walkthrough
 - [patches/README.md](./patches/README.md) - Upstream bug tracking
