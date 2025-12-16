@@ -11,6 +11,12 @@ warp_grep/warp_grep/
 # macOS
 .DS_Store
 
+# AI / agent tooling
+.claude/
+.cursor/
+.gemini/
+.codex/
+
 # Editor
 *.swp
 *.swo
