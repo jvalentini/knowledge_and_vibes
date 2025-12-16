@@ -76,11 +76,8 @@ curl -fsSL https://raw.githubusercontent.com/Dicklesworthstone/mcp_agent_mail/ma
 # Install/update CASS
 curl -fsSL https://raw.githubusercontent.com/Dicklesworthstone/coding_agent_session_search/main/install.sh | bash -s -- --easy-mode
 
-# Install/update cass-memory (from K&V patched source)
-git clone --depth 1 https://github.com/anthropics/knowledge_and_vibes.git /tmp/kv-install && \
-  cd /tmp/kv-install/cass_memory_system && bun install && bun run build && \
-  cp dist/cass-memory ~/.local/bin/cm && chmod +x ~/.local/bin/cm && \
-  rm -rf /tmp/kv-install
+# Install/update cass-memory
+curl -L https://github.com/Dicklesworthstone/cass_memory_system/releases/latest/download/cass-memory-macos-arm64 -o ~/.local/bin/cm && chmod +x ~/.local/bin/cm
 
 # Install/update UBS
 curl -fsSL https://raw.githubusercontent.com/Dicklesworthstone/ultimate_bug_scanner/master/install.sh | bash -s -- --easy-mode
@@ -740,11 +737,8 @@ cass index --full
 ### "cm: command not found"
 
 ```bash
-# Build from K&V source (patched version)
-cd /path/to/knowledge_and_vibes/cass_memory_system
-bun install && bun run build
-cp dist/cass-memory ~/.local/bin/cm
-chmod +x ~/.local/bin/cm
+# Download latest release
+curl -L https://github.com/Dicklesworthstone/cass_memory_system/releases/latest/download/cass-memory-macos-arm64 -o ~/.local/bin/cm && chmod +x ~/.local/bin/cm
 ```
 
 ### Skills not activating

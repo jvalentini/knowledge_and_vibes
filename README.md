@@ -133,7 +133,7 @@ bd blocked                         # What's waiting?
 
 # Maintenance
 bd doctor --fix                    # Health check
-# bd sync                          # Don't use in multi-agent environments!
+# ⚠️  WARNING: Don't use `bd sync` in multi-agent environments (causes HEAD ref conflicts)
 ```
 
 | Concept | Values |
@@ -144,6 +144,13 @@ bd doctor --fix                    # Health check
 
 **Rule**: Always commit `.beads/` with your code changes.
 
+**Never:**
+- Use markdown TODO lists (use beads)
+- Use other trackers (beads is authoritative)
+- Claim only the parent bead (always claim ALL sub-beads)
+- Skip `[CLAIMED]`/`[CLOSED]` announcements
+- Edit `.beads/*.jsonl` directly (only via `bd`)
+
 ### Beads Viewer (Graph Analysis)
 
 ```bash
@@ -153,6 +160,11 @@ bv --robot-insights                # Graph metrics (PageRank, betweenness, HITS)
 bv --robot-diff --diff-since "1 hour ago"  # Recent changes
 bv --robot-recipes                 # Available filter presets
 ```
+
+**Graph metrics explained:**
+- **PageRank**: Foundational blockers (tasks that enable many others)
+- **Betweenness**: Bottlenecks (must pass through these)
+- **Critical path**: Longest dependency chain
 
 **Rule**: Always use `--robot-*` flags. Never run bare `bv`.
 
@@ -254,6 +266,73 @@ macro_start_session(human_key="/path", program="claude-code", model="opus-4.5",
 
 Web UI: http://127.0.0.1:8765/mail
 
+### Multi-Agent Coordination Rules
+
+**These rules are MANDATORY to prevent conflicts when running multiple agents.**
+
+#### Rule 1: Claim ALL Sub-Beads Together
+
+When you claim a parent bead, you MUST claim ALL its sub-beads immediately:
+
+```bash
+bd update bd-123 --status in_progress --assignee YOUR_AGENT_NAME
+bd update bd-123.1 --status in_progress --assignee YOUR_AGENT_NAME
+bd update bd-123.2 --status in_progress --assignee YOUR_AGENT_NAME
+```
+
+**Why:** If you only claim the parent, another agent sees sub-beads as "ready" → CONFLICT.
+
+#### Rule 2: Reserve Files Before Editing
+
+```python
+file_reservation_paths(
+    project_key, agent_name,
+    paths=["src/module/**", "tests/test_module.py"],
+    ttl_seconds=3600, exclusive=True, reason="bd-123"
+)
+```
+
+#### Rule 3: Announce `[CLAIMED]` When Starting
+
+```python
+send_message(project_key, sender_name, to=["all"],
+    subject="[CLAIMED] bd-123 - Feature Title",
+    body_md="Starting work on **bd-123** (plus sub-beads .1, .2).\n\nFile reservations: `src/module/**`",
+    thread_id="bd-123")
+```
+
+#### Rule 4: Announce `[CLOSED]` When Finishing
+
+```python
+send_message(project_key, sender_name, to=["all"],
+    subject="[CLOSED] bd-123 - Feature Title",
+    body_md="Completed **bd-123**.\n\nFiles created: ...\nReleasing reservations.",
+    thread_id="bd-123")
+```
+
+#### Rule 5: Check Inbox BEFORE Claiming
+
+Before running `bd ready`, check your inbox for recent `[CLAIMED]` messages.
+
+### Bead Claiming Checklist
+
+```
+□ 1. Check inbox for recent [CLAIMED] messages
+□ 2. Run `bd ready --json` to find unblocked work
+□ 3. Run `bv --robot-priority` to confirm priority
+□ 4. Claim PARENT bead: `bd update <id> --status in_progress --assignee YOUR_NAME`
+□ 5. Claim ALL SUB-BEADS: `bd update <id.1> --status in_progress --assignee YOUR_NAME`
+□ 6. Reserve ALL file paths via file_reservation_paths()
+□ 7. Send [CLAIMED] message to all agents
+□ 8. Work on the bead
+□ 9. Close ALL sub-beads first, then parent
+□ 10. Send [CLOSED] message to all agents
+□ 11. Release file reservations
+□ 12. Commit with .beads/ included: `git add -A && git commit`
+```
+
+**DO NOT use `bd sync`** — it fails in multi-agent environments.
+
 ### Warp-Grep (Parallel Code Search)
 
 MCP tool that runs 8 parallel searches per turn. Activates automatically for natural language code questions.
@@ -294,8 +373,8 @@ curl -fsSL https://raw.githubusercontent.com/Dicklesworthstone/mcp_agent_mail/ma
 # CASS (session search)
 curl -fsSL https://raw.githubusercontent.com/Dicklesworthstone/coding_agent_session_search/main/install.sh | bash -s -- --easy-mode
 
-# cass-memory (see Troubleshooting if issues)
-curl -L https://github.com/Dicklesworthstone/cass_memory_system/releases/latest/download/cass-memory-darwin-arm64 -o ~/.local/bin/cm && chmod +x ~/.local/bin/cm
+# cass-memory (cross-agent learning)
+curl -L https://github.com/Dicklesworthstone/cass_memory_system/releases/latest/download/cass-memory-macos-arm64 -o ~/.local/bin/cm && chmod +x ~/.local/bin/cm
 
 # UBS (bug scanner)
 curl -fsSL https://raw.githubusercontent.com/Dicklesworthstone/ultimate_bug_scanner/master/install.sh | bash -s -- --easy-mode
@@ -355,6 +434,16 @@ ntm doctor             # NTM
 
 ## Documentation
 
+### Configuration Locations
+
+| Location | Purpose | When to Use |
+|----------|---------|-------------|
+| `CLAUDE.md` | Project context, architecture | Understanding the codebase |
+| `AGENTS.md` | Workflow instructions | Session startup, tool usage |
+| `.claude/rules/` | Constraints and conventions | Auto-loaded, always follow |
+| `.claude/skills/` | Detailed guides and capabilities | Reference when relevant |
+| `.claude/commands/` | Slash commands | Invoke with `/command-name` |
+
 ### Philosophy & Approach
 | Document | Description |
 |----------|-------------|
@@ -375,10 +464,6 @@ ntm doctor             # NTM
 | [AGENTS_TEMPLATE.md](./AGENTS_TEMPLATE.md) | Template for AGENTS.md workflow |
 | [CLAUDE_CONFIG_GUIDE.md](./CLAUDE_CONFIG_GUIDE.md) | Organizing rules, skills, and commands |
 
-### Examples
-| Document | Description |
-|----------|-------------|
-| [cass_memory_system/AGENTS.md](./cass_memory_system/AGENTS.md) | Comprehensive AGENTS.md example |
 
 ---
 
@@ -392,14 +477,14 @@ ntm doctor             # NTM
 | `bv: command not found` | Same PATH fix, or reinstall via agent-mail installer |
 | `bv` or `cass` hangs | **Always** use `--robot` or `--json` flags. TUI mode hangs agents |
 | CASS finds nothing | Run `cass index --full` to index sessions |
-| `cm context` returns empty | Check CASS indexed, run `cm doctor`. If still empty, apply patches (see below) |
+| `cm context` returns empty | Check CASS indexed, run `cm doctor`. Update to cm v0.2.0+ |
 | `cm reflect` broken | Known CASS SQL bug, use `cm context` instead |
 | Agent Mail won't start | Check port 8765 is free: `lsof -i :8765` |
 | Agent Mail MCP not connecting | Run `am` to start server, check `curl localhost:8765/health` |
 | UBS module errors | Run `ubs doctor --fix` |
 | Warp-Grep not working | Check `/mcp` shows morph-fast-tools, verify MORPH_API_KEY |
 | Exa not working | Check `/mcp` shows exa, verify EXA_API_KEY |
-| `bun: command not found` | Install bun: `curl -fsSL https://bun.sh/install \| bash` (needed for cm from source) |
+| `bd sync` fails with conflicts | Don't use `bd sync` in multi-agent setups. Commit `.beads/` with your code instead |
 | Permission denied on install | Use `~/.local/bin` instead of `/usr/local/bin`, or use `sudo` |
 | `ntm: command not found` | Run installer or add to PATH: `export PATH="$HOME/.local/bin:$PATH"` |
 | NTM can't find tmux | Install tmux: `brew install tmux` (macOS) or `apt install tmux` (Linux) |
@@ -418,33 +503,6 @@ ntm doctor             # NTM
 bd doctor && cm doctor && ubs doctor && cass health && curl -s localhost:8765/health && ntm doctor
 ```
 
-### CASS + cass-memory Compatibility
-
-If `cm context` returns empty results even with indexed sessions, you may need to apply patches for two upstream bugs:
-
-1. **Search parsing bug**: CASS returns `{hits:[...]}` but cass-memory expects `[...]`
-2. **Nullable field bug**: Some CASS hits have `created_at: null` which fails validation
-
-**To fix**, use our patched cass-memory:
-```bash
-cd /path/to/knowledge_and_vibes/cass_memory_system
-bun install && bun run build
-sudo mv ./dist/cass-memory /usr/local/bin/cm
-```
-
-Or apply patches to a fresh clone:
-```bash
-git clone https://github.com/Dicklesworthstone/cass_memory_system.git
-cd cass_memory_system
-/path/to/knowledge_and_vibes/patches/fix-cass-memory.sh .
-bun install && bun run build
-sudo mv ./dist/cass-memory /usr/local/bin/cm
-```
-
-**Tracking issues**:
-- [cass_memory_system#2](https://github.com/Dicklesworthstone/cass_memory_system/issues/2)
-- [coding_agent_session_search#7](https://github.com/Dicklesworthstone/coding_agent_session_search/issues/7)
-
 ---
 
 ## Repository Structure
@@ -460,7 +518,5 @@ knowledge_and_vibes/
 ├── DECOMPOSITION.md         # Task breakdown + planning patterns
 ├── CODEMAPS_TEMPLATE.md     # Architecture documentation
 ├── TUTORIAL.md              # Detailed workflow guide
-├── LICENSE                  # MIT
-├── patches/                 # Upstream bug fixes
-└── cass_memory_system/      # Patched cass-memory
+└── LICENSE                  # MIT
 ```

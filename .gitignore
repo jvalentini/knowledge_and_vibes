@@ -6,8 +6,7 @@ mcp_agent_mail/mcp_agent_mail/
 ultimate_bug_scanner/ultimate_bug_scanner/
 warp_grep/warp_grep/
 
-# Note: cass_memory_system IS tracked (includes our patches)
-# Other tools are cloned during install from their upstream repos
+# Tools are cloned during install from their upstream repos
 
 # macOS
 .DS_Store
