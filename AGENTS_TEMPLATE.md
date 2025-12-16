@@ -102,7 +102,7 @@ bd list                            # All tasks
 
 # Task lifecycle
 bd create "Title" -t bug -p 1 --estimate 30   # Create with type, priority, estimate
-bd update bd-42 --status in_progress          # Claim task
+bd update bd-42 --status in_progress --assignee YOUR_AGENT_NAME  # Claim task
 bd close bd-42 --reason "Completed"           # Complete task
 
 # Viewing
@@ -127,8 +127,8 @@ bd dep cycles                                       # Find circular deps
 bd doctor                          # Health check
 bd doctor --fix                    # Auto-fix issues
 bd compact --analyze --json        # Analyze for compaction
-bd sync                            # Force sync to git
 bd --readonly list                 # Safe read-only mode
+# bd sync                          # Don't use in multi-agent environments!
 ```
 
 **Types**: `bug`, `feature`, `task`, `epic`, `chore`
@@ -137,17 +137,34 @@ bd --readonly list                 # Safe read-only mode
 
 ### Agent Workflow
 
-1. `bd ready --json` to find unblocked work
-2. Claim: `bd update <id> --status in_progress`
-3. Implement + test
-4. Discovered work: `bd create "..." && bd dep add <new> <current> --type discovered-from`
-5. Close: `bd close <id> --reason "..."`
-6. Commit `.beads/` in the same commit as code changes
+1. **Check inbox** for recent `[CLAIMED]` messages from other agents
+2. `bd ready --json` to find unblocked work
+3. `bv --robot-priority` to confirm priority
+4. **Claim PARENT bead AND ALL SUB-BEADS together:**
+   ```bash
+   bd update <id> --status in_progress --assignee YOUR_AGENT_NAME
+   bd update <id>.1 --status in_progress --assignee YOUR_AGENT_NAME
+   bd update <id>.2 --status in_progress --assignee YOUR_AGENT_NAME
+   # ... repeat for ALL sub-beads
+   ```
+   **WHY:** If you only claim the parent, other agents see sub-beads as "ready" → CONFLICT
+5. **Reserve file paths** via `file_reservation_paths()`
+6. **Send `[CLAIMED]` message** to all agents
+7. Implement + test
+8. Discovered work: `bd create "..." && bd dep add <new> <current> --type discovered-from`
+9. **Close ALL sub-beads first**, then parent: `bd close <id> --reason "..."`
+10. **Send `[CLOSED]` message** to all agents
+11. **Release file reservations**
+12. Commit `.beads/` in the same commit as code changes: `git add -A && git commit`
+
+**Warning:** Don't use `bd sync` in multi-agent environments - it fails due to HEAD ref conflicts when multiple agents push concurrently. Include `.beads/` in your regular commits instead.
 
 Never:
 - Use markdown TODO lists
 - Use other trackers
 - Duplicate tracking
+- Claim only the parent bead (always claim ALL sub-beads)
+- Skip `[CLAIMED]`/`[CLOSED]` announcements
 
 ---
 
@@ -289,6 +306,92 @@ ubs --comparison baseline.json .   # Regression detection
 **Suppress false positives**: `// ubs:ignore`
 
 **Health check**: `ubs doctor --fix`
+
+---
+
+## Multi-Agent Coordination Rules
+
+**These rules are MANDATORY to prevent conflicts in multi-agent environments.**
+
+### Rule 1: Claim ALL Sub-Beads Together
+
+When you claim a parent bead, you MUST claim ALL its sub-beads immediately:
+
+```bash
+bd update bd-123 --status in_progress --assignee YOUR_AGENT_NAME
+bd update bd-123.1 --status in_progress --assignee YOUR_AGENT_NAME
+bd update bd-123.2 --status in_progress --assignee YOUR_AGENT_NAME
+bd update bd-123.3 --status in_progress --assignee YOUR_AGENT_NAME
+```
+
+**WHY:** If you only claim the parent, another agent sees sub-beads as "ready" and starts working on them → CONFLICT.
+
+### Rule 2: File Reservations for ALL Bead Paths
+
+When you claim a bead, IMMEDIATELY reserve ALL file paths it will touch:
+
+```python
+file_reservation_paths(
+    project_key, agent_name,
+    paths=["src/module/**", "tests/test_module.py"],
+    ttl_seconds=3600,
+    exclusive=True,
+    reason="bd-123: Brief description"
+)
+```
+
+### Rule 3: Announce When You START
+
+Send a `[CLAIMED]` message when you claim a bead:
+
+```python
+send_message(
+    project_key, sender_name,
+    to=["all"],
+    subject="[CLAIMED] bd-123 - Feature Title",
+    body_md="Starting work on **bd-123** (plus sub-beads .1, .2, .3).\n\nFile reservations: `src/module/**`",
+    thread_id="bd-123"
+)
+```
+
+### Rule 4: Announce When You FINISH
+
+Send a `[CLOSED]` message when you complete a bead:
+
+```python
+send_message(
+    project_key, sender_name,
+    to=["all"],
+    subject="[CLOSED] bd-123 - Feature Title",
+    body_md="Completed **bd-123**.\n\nFiles created: ...\nTests: X passing\n\nReleasing file reservations.",
+    thread_id="bd-123"
+)
+```
+
+### Rule 5: Check Inbox BEFORE Claiming
+
+Before running `bd ready`, check your inbox for recent `[CLAIMED]` messages.
+
+---
+
+## Bead Claiming Checklist
+
+```
+□ 1. Check inbox for recent [CLAIMED] messages
+□ 2. Run `bd ready --json` to find unblocked work
+□ 3. Run `bv --robot-priority` to confirm priority
+□ 4. Claim PARENT bead: `bd update <id> --status in_progress --assignee YOUR_NAME`
+□ 5. Claim ALL SUB-BEADS: `bd update <id.1> --status in_progress --assignee YOUR_NAME`
+□ 6. Reserve ALL file paths via file_reservation_paths()
+□ 7. Send [CLAIMED] message to all agents
+□ 8. Work on the bead
+□ 9. Close ALL sub-beads first, then parent
+□ 10. Send [CLOSED] message to all agents
+□ 11. Release file reservations
+□ 12. Commit with .beads/ included: `git add -A && git commit`
+```
+
+**DO NOT use `bd sync`** — it fails in multi-agent environments.
 
 ---
 
@@ -460,7 +563,7 @@ claude --resume myapp-GreenCastle-20251210-143022
 
 ```bash
 bd ready --json                    # Find work
-bd update <id> --status in_progress
+bd update <id> --status in_progress --assignee YOUR_AGENT_NAME
 cm context "task description" --json
 ```
 
@@ -480,10 +583,11 @@ fetch_inbox(project_key, agent_name)
 ```bash
 ubs --staged                       # Scan for bugs
 bd close <id> --reason "Completed: ..."
-bd sync                            # Sync .beads
-git add -A && git commit && git push
+git add -A && git commit && git push   # .beads/ included automatically
 release_file_reservations(...)     # If multi-agent
 ```
+
+**Note:** Don't use `bd sync` - it fails in multi-agent environments. The `.beads/` directory is included in your regular commits.
 
 ---
 

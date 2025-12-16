@@ -68,7 +68,7 @@ ubs --staged                 # 3. Is my code safe to commit?
 ```bash
 # Start
 bd ready --json                              # See available tasks
-bd update bd-123 --status in_progress        # Claim one
+bd update bd-123 --status in_progress --assignee AgentName  # Claim one
 cm context "implement feature X" --json      # Get relevant context
 
 # Name your session (Claude Code 2.0.64+)
@@ -122,7 +122,7 @@ bv --robot-priority                          # Get recommendations
 ```bash
 # Core workflow
 bd ready --json                    # What's available?
-bd update ID --status in_progress  # Claim a task
+bd update ID --status in_progress --assignee YOUR_AGENT_NAME  # Claim task
 bd close ID --reason "Done"        # Complete it
 bd create "Title" -t bug -p 1      # Create new task
 
@@ -133,7 +133,7 @@ bd blocked                         # What's waiting?
 
 # Maintenance
 bd doctor --fix                    # Health check
-bd sync                            # Force sync
+# bd sync                          # Don't use in multi-agent environments!
 ```
 
 | Concept | Values |
